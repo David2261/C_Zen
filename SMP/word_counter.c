@@ -9,7 +9,7 @@ int main(){
 
 	int c, nl = 0, nw = 0, nc = 0, stats = OUT;
 
-	while(()) {
+	while((c = getchar()) != EOF) {
 		++nc;
 		if(c == '\n')
 			++nl;
@@ -20,6 +20,7 @@ int main(){
 			++nw;
 		}
 	}
+
 
 	printf("%d %d %d\n", nl, nw, nc);
 
