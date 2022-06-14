@@ -21,7 +21,7 @@ double atof(char s[]) {
 	int i, sign;
 
 	for (i = 0; isspace(s[i]); i++)
-		; // Пропуск пробелов
+        ; // Пропуск пробелов
 	sign = (s[i] == '-') ? -1 : 1;
 	if (s[i] == '+' || s[i] == '-')
 		i++;
