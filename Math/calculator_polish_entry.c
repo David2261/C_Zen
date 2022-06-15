@@ -8,7 +8,7 @@
 void push(double);
 
 // Калькулятор с обратной польской записью
-int main() {
+main() {
 	int type;
 	double op2;
 	char s[MAXOP];
