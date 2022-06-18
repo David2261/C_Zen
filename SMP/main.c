@@ -1,8 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <conio.h>
+#include <stdlib.h >
+#include <calc.h>
 
 #define MAXOP 100 // Максимальный размер операнда или знака
-#define NUMBER '0' // Сигнал, что обнаружено число
+
 
 #int getop();
 void push(double);
