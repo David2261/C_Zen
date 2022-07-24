@@ -4,6 +4,7 @@
 #include <conio.h>
 #include <stdarg.h>
 
+void minprintf(char*);
 // Переводит выходные данные в нижний регистр
 int main(){
 	int c;
@@ -15,7 +16,7 @@ int main(){
 }
 
 // Упрощенная версия printf, со списком арг. переменной длины
-void minprintf(char *fmt, ...) {
+void minprintf(char *fmt) {
 	va_list ap; // Указывает на безымянный аргумент
 	char *p, *sval;
 	int ival;

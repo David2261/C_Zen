@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "syscalls.h"
+// #include "syscalls.h"
 
+int getchar();
 // Копирование потока ввода в поток вывода
 int main(){
 	char buf[BUFSIZ];
