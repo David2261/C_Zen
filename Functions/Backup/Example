@@ -1,0 +1,47 @@
+CC=gcc
+CFLAGS=-c -Wall -Werror -Wextra
+DFLAGS=main_executable_module data_sort data_stat data_process decision
+AFLAGS=-fPIC -c -Wall -Wextra -Werror
+
+all: main
+
+main: main_executable_module  data_io data_sort data_stat data_process decision
+	$(CC) -Wall -Werror -Wextra main_executable_module.o data_io.o data_sort.o data_stat.o data_process.o decision.o -o ../../build/Quest_3
+
+main_executable_module: main_executable_module.c  ../data_libs/data_io.h ../data_module/data_process.h ../data_libs/data_sort.h ../yet_another_decision_module/decision.h
+	$(CC) $(CFLAGS) main_executable_module.c
+
+data_io: ../data_libs/data_io.c ../data_libs/data_io.h
+	$(CC) $(CFLAGS) ../data_libs/data_io.c
+
+data_sort: ../data_libs/data_sort.c ../data_libs/data_sort.h
+	$(CC) $(CFLAGS) ../data_libs/data_sort.c
+
+data_stat: ../data_libs/data_stat.c ../data_libs/data_stat.h
+	$(CC) $(CFLAGS) ../data_libs/data_stat.c 
+
+data_stat.a: ../data_libs/data_stat.c ../data_libs/data_stat.h
+	$(CC) $(CFLAGS) ../data_libs/data_stat.c && ar -rcs data_stat.a *.o
+
+build_with_static: data_stat.a $(DFLAGS) 
+	$(CC) -Wall -Werror -Wextra data_stat.a *.o -o ../../build/Quest_5
+
+data_process: ../data_module/data_process.c  ../data_module/data_process.h ../data_libs/data_stat.h
+	$(CC) $(CFLAGS) ../data_module/data_process.c
+
+decision: ../yet_another_decision_module/decision.c  ../yet_another_decision_module/decision.h ../data_libs/data_stat.h
+	$(CC) $(CFLAGS) ../yet_another_decision_module/decision.c
+
+build_with_macro: $(DFLAGS) 
+	$(CC) -Wall -Werror -Wextra -o ../../build/Quest_4 *.o ../data_libs/data_io_macro.h ../data_module/data_process.h ../data_libs/data_sort.h ../yet_another_decision_module/decision.h -DUSE_MACRO
+
+data_process.so: data_stat ../data_module/data_process.c ../data_libs/data_stat.c  ../data_libs/data_stat.h ../data_module/data_process.h
+	$(CC) $(AFLAGS) ../data_module/data_process.c ../data_libs/data_stat.c && $(CC) -shared -o data_process.so data_process.o data_stat.o
+
+build_with_dinamic: data_process.so $(DFLAGS) 
+	$(CC) -Wall -Werror -Wextra *.o -o ../../build/Quest_6
+
+clean:
+	rm -rf *.o main *.a *.so
+
+rebuild: clean all 
