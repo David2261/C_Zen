@@ -1,4 +1,4 @@
-# The Basis of C
+# The Lessons of C
 
 [![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Tiro+Devanagari+Sanskrit&duration=10000&color=FF4E5D&background=161B3100&lines=The+Basics+of+understanding+C+language+by+studying+data+types%2C+functions%2C+loops%2C+etc...)](https://git.io/typing-svg)
 
