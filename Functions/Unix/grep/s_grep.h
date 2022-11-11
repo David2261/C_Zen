@@ -1,27 +1,20 @@
 #ifndef BASE_FUNCTION_UNIX_GREP_S_GREP_H_
 #define BASE_FUNCTION_UNIX_GREP_S_GREP_H_
 #include "../common/main.h"
-// #define BUFF 8192
+
 
 struct Option_2 {
-//  int flag_e;
+  int flag_e;
   int flag_i;
   int flag_v;
   int flag_c;
   int flag_l;
-//  int flag_n;
-//  int flag_h;
-//  int flag_s;
+  int flag_n;
+  int flag_h;
+  int flag_s;
   int flag_f;
   int flag_o;
 };
-
-// enum {
-//   SUCCESS,
-//   FILE_DOES_NOT_EXIST,
-//   FLAG_DOES_NOT_EXIST,
-//   MALLOC_ERROR
-// };
 
 void _grep(struct Option *opt, struct Option_2 *opt_2, char *file_name, char *pattern[], int count_file);
 

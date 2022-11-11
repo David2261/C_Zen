@@ -1,46 +1,54 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <regex.h>
 #include "s_grep.h"
 
+int main(int argc, char *argv[]) {
+    struct Option_2 opt;
+    int FLAG = 0, flag_e_f = 0;
+    char *path = NULL;
+    char *pattern = NULL;
 
-int main(int argc, char **argv) {
-    struct Option opt;
-    struct Option_2 opt_2;
-    int FLAG = 0;
-    char *template = (char*)malloc(sizeof(char));
-    FILE* file;
 
-    if (argc >= 3) {
-        _get_args(argc, argv, file, template, &opt, &opt_2);
-    } else {
+    if (argc >= 3)
+        _get_args(argc, argv, path, pattern, &opt);
+    else
         FLAG = 1;
-    }
-    if (FLAG == 0) {
-        if (*template == NULL) {
-            FLAG = 1;
-            *template = malloc(sizeof(char) * (strlen(*file) + 1));
-            if (*template != NULL) {
-                strcpy(*template, *file);
-                FLAG = 0;
+
+    if (!FLAG) {
+        if (*pattern == NULL) {
+            flag_e_f = 1;
+            *pattern = malloc(sizeof(char) * (strlen(*path) + 1));
+            if (*pattern == NULL) {
+                FLAG = 1;
+            } else {
+                strcpy(*pattern, *path);
             }
         }
-        int count_file = _get_count_files(file) - flag_e_f_does_not_exist;
-        for (int i = flag_e_f_does_not_exist; file[i] && error == SUCCESS; i++)
-            _grep(&flags, file[i], template, count_file);
-    }
 
-    for (int i = 0; file[i]; i++)
-        free(file[i]);
-    for (int i = 0; template[i]; i++)
-        free(template[i]);
+        int count_file = _get_count_files(path) - flag_e_f;
+        // Можно добавить остановку цикла, если флаг = 1
+        for (int i = flag_e_f; path[i] && !FLAG; i++) _grep(&opt, path[i], pattern, count_file);
+    }
+    for (int i = 0; path[i]; i++)
+        free(path[i]);
+    for (int i = 0; pattern[i]; i++)
+        free(pattern[i]);
+
+    if (FLAG == 1) printf("n/a");
+
     return FLAG;
 }
 
 
-void _grep(struct Option *opt, struct Option_2 *opt_2, char *file_name, char *template[], int count_file) {
-    FILE *file = fopen(file_name, "r");
+int _get_count_files(char *file_name[]) {
+    int count = 0;
+    while (*file_name++)
+        ++count;
+    return count;
+}
+
+
+
+void _grep(struct Option_2 opt, char *path, char *pattern[], int count_file) {
+    FILE *file = fopen(path, "r");
     if (file) {
         char *__linep = NULL;
         int count_matched_lines = 0;
@@ -50,12 +58,12 @@ void _grep(struct Option *opt, struct Option_2 *opt_2, char *file_name, char *te
         char *matches[BUFF] = {NULL};
         while (getline(&__linep, &__linecapp, file) > 0) {
             count_line++;
-            if (_template_matching(__linep, template, matches, flags)) {
+            if (_pattern_matching(__linep, pattern, matches, opt)) {
                 count_matched_lines++;
-                if (!flags->c && !flags->l) {
-                    _handle_header(file_name, count_file, flags);
-                    _handle_flag_n(count_line, flags);
-                    if (flags->o && !flags->v) { //&& !flags->v
+                if (!opt.flag_c && !opt.flag_l) {
+                    if (!opt.flag_c && !opt.flag_h && count_file > 1) printf("%s:", path);
+                    if (opt.flag_n) printf("%d:", count_line);
+                    if (opt.flag_o && !opt.flag_v) {
                         for (int j = 0; matches[j]; j++) {
                             printf("%s\n", matches[j]);
                         }
@@ -71,27 +79,24 @@ void _grep(struct Option *opt, struct Option_2 *opt_2, char *file_name, char *te
             for (int j = 0; matches[j]; j++)
                 free(matches[j]);
         }
-        // flag->c
-        _handle_header_flag_c(flags, file_name, count_file);
-        // flag->count_mutched_line
-        _handle_flag_c(flags, count_matched_lines);
-        // flag->l list files
-        _handle_flag_l(flags, file_name, count_matched_lines);
+        if (opt.flag_c && !opt.flag_h && count_file > 1) printf("%s:", path);
+        if (opt.flag_c) printf("%d\n", opt.flag_l ? count_matched_lines > 0 : count_matched_lines);
+        if (opt.flag_l && count_matched_lines) printf("%s\n", path);
         free(__linep);
         fclose(file);
-    } else if (!flags->s) {
-        sprintf(stderr, "grep: [%s] -- No such file or directory!\n", file_name);
+    } else if (!opt.flag_s) {
+        printf("n/a");
     }
 }
 
-int _template_matching(const char *const linep, char *template[], char *matches[], const struct Option *opt, struct Option_2 *opt_2) {
+int _pattern_matching(const char *const linep, char *pattern[], char *matches[], const struct Option_2 opt) {
     int index = 0;
-    for (int i = 0; template[i]; i++) {
+    for (int i = 0; pattern[i]; i++) {
         regex_t regex;
         if (flags->i)
-            regcomp(&regex, template[i], REG_ICASE);
+            regcomp(&regex, pattern[i], REG_ICASE);
         else
-            regcomp(&regex, template[i], REG_EXTENDED);
+            regcomp(&regex, pattern[i], REG_EXTENDED);
 
         regmatch_t match;
         size_t linep_length = strlen(linep);
@@ -109,147 +114,104 @@ int _template_matching(const char *const linep, char *template[], char *matches[
         matches[index] = NULL;
         regfree(&regex);
     }
-    return flags->v ? !index : index;
+    return opt.flag_v ? !index : index;
 }
 
-void _handle_header(char *file_name, int count_file, struct Option *opt, struct Option_2 *opt_2) {
-    if (!flags->c && !flags->h && count_file > 1)
-        printf("%s:", file_name);
-}
 
-void _handle_flag_n(int count_line, struct Option *opt, struct Option_2 *opt_2) {
-    if (flags->n)
-        printf("%d:", count_line);
-}
-
-void _handle_flag_c(struct Option *opt, struct Option_2 *opt_2, int count_matched_lines) {
-    if (flags->c) {
-        printf("%d\n", flags->l ? count_matched_lines > 0 : count_matched_lines);
-    }
-}
-
-void _handle_flag_l(struct Option *opt, struct Option_2 *opt_2, char *file_name, int count_matched_lines) {
-    if (flags->l && count_matched_lines) {
-        printf("%s\n", file_name);
-    }
-}
-
-int _get_args(int argc, char *argv[], char *file_name[], char *template[], struct Option *opt, struct Option_2 *opt_2) {
-    int error = SUCCESS;
-    int template_ = 0;
+int _get_args(int argc, char *argv[], char *path[], char *pattern[], struct Option_2 opt) {
+    int FLAG = 0;
+    int pattern_ = 0;
     int file_ = 0;
     for (int i = 1; i < argc; i++) {
-        if (_get_flags(argv[i], flags)) {
-            if (_check_flags_exist(argv[i])) {
-                error = FLAG_DOES_NOT_EXIST;
-                break;
-            }
-            if ((flags->e || flags->f) && !argv[i]) {
-                error = FLAG_DOES_NOT_EXIST;
-                break;
-            }
-            if (flags->e) {
-                // Сдвигаем инкрмент на еще +1, чтобы взять уже файл.
-                i++;
-                template[template_] = malloc(sizeof(char) * (strlen(argv[i] + 1)));
-                if (template[template_] == NULL) {
-                    error = MALLOC_ERROR;
+        if (_get_flags(argv[i], opt)) {
+            for (int i = 1; argv[i]; i++)
+                if (strlen(argv) != strspn(argv, "-eivclnhsfo")) {
+                    FLAG = 1;
                     break;
                 }
-                strcpy(template[template_], argv[i]);
-                ++template_;
-            } else if (flags->f) {
-                i++;
-                if ((error = _handle_flag_f(argv[i], template, &template_)) != SUCCESS) { break; }
-            }
-            _reset_flag_e_and_f(flags);
-        } else {
-            file_name[file_] = malloc(sizeof(char) * (strlen(argv[i]) + 1));
-            if (file_name[file_] == NULL) {
-                error = MALLOC_ERROR;
+            if ((opt.flag_e || opt.flag_f) && !argv[i]) {
+                FLAG = 0;
                 break;
             }
-            strcpy(file_name[file_], argv[i]);
+            if (opt.flag_e) {
+                // Сдвигаем инкрмент на еще +1, чтобы взять уже файл.
+                i++;
+                pattern[pattern_] = malloc(sizeof(char) * (strlen(argv[i] + 1)));
+                if (pattern[pattern_] == NULL) {
+                    FLAG = 1;
+                    break;
+                }
+                strcpy(pattern[pattern_], argv[i]);
+                ++pattern_;
+            } else if (opt.flag_f) {
+                i++;
+                if ((FLAG = _handle_flag_f(argv[i], pattern, &pattern_)) != 0) { break; }
+            }
+            opt.flag_e = 0;
+            opt.flag_f = 0;
+        } else {
+            path[file_] = malloc(sizeof(char) * (strlen(argv[i]) + 1));
+            if (path[file_] == NULL) {
+                FLAG = 1;
+                break;
+            }
+            strcpy(path[file_], argv[i]);
             ++file_;
         }
     }
-    template[template_] = NULL;
-    file_name[file_] = NULL;
-    return error;
+    pattern[pattern_] = NULL;
+    path[file_] = NULL;
+    return FLAG;
 }
 
-int _handle_flag_f(char *file_name, char *templates[], int *index) {
+int _handle_flag_f(char *path, char *patterns[], int *index) {
 
-    int error = SUCCESS;
-    FILE *file = fopen(file_name, "r");
+    int FLAG = SUCCESS;
+    FILE *file = fopen(path, "r");
     if (file == NULL) {
-        printf("NO FILE");
-        error = FILE_DOES_NOT_EXIST;
+        printf("n/a");
+        FLAG = 1;
     } else {
-        char *template = NULL;
+        char *pattern = NULL;
         size_t __linep = 0;
         ssize_t __linep_length = 0;
-        while ((__linep_length = getline(&template, &__linep, file)) > 0) {
-            templates[*index] = malloc(sizeof(char) * (__linep_length + 1));
-            if (templates[*index] == NULL) {
+        while ((__linep_length = getline(&pattern, &__linep, file)) > 0) {
+            patterns[*index] = malloc(sizeof(char) * (__linep_length + 1));
+            if (patterns[*index] == NULL) {
                 error = MALLOC_ERROR;
                 break;
             }
-            strcpy(templates[*index], template);
-            templates[*index][strcspn(templates[*index], "\r\n")] = '\0';
+            strcpy(patterns[*index], pattern);
+            patterns[*index][strcspn(patterns[*index], "\r\n")] = '\0';
             // Если файл пустой с паттернами, то выведем все
-            if (!strlen(templates[*index])) {
-                templates[*index][0] = '.';
+            if (!strlen(patterns[*index])) {
+                patterns[*index][0] = '.';
             }
             (*index)++;
         }
 
         fclose(file);
-        free(template);
+        free(pattern);
     }
     return error;
 }
 
-int _get_flags(char *argv, struct Option *opt, struct Option_2 *opt_2) {
+int _get_flags(char *argv, struct Option_2 opt) {
+    int parametr = 0;
     if (argv[0] == '-') {
         for (int i = 1; argv[i]; i++) {
-            // if (strlen(argv) == 1 || strlen(argv) != strspn(argv, "-eivclnhsfo")) error = 1;
-            if (opt.flag_e != 1) opt.flag_e = checker(argv[i], 'e');
-            if (strchr(argv, 'i')) flags->i = 1;
-            if (strchr(argv, 'v')) flags->v = 1;
-            if (strchr(argv, 'c')) flags->c = 1;
-            if (strchr(argv, 'l')) flags->l = 1;
-            if (strchr(argv, 'n')) flags->n = 1;
-            if (strchr(argv, 'h')) flags->h = 1;
-            if (strchr(argv, 's')) flags->s = 1;
-            if (strchr(argv, 'f')) flags->f = 1;
-            if (strchr(argv, 'o')) flags->o = 1;
+            if (opt.flag_e != 1) opt.flag_e = checker(argv, 'e');
+            if (opt.flag_i != 1) opt.flag_i = checker(argv, 'i');
+            if (opt.flag_v != 1) opt.flag_v = checker(argv, 'v');
+            if (opt.flag_c != 1) opt.flag_c = checker(argv, 'c');
+            if (opt.flag_l != 1) opt.flag_l = checker(argv, 'l');
+            if (opt.flag_n != 1) opt.flag_n = checker(argv, 'n');
+            if (opt.flag_h != 1) opt.flag_h = checker(argv, 'h');
+            if (opt.flag_s != 1) opt.flag_s = checker(argv, 's');
+            if (opt.flag_f != 1) opt.flag_f = checker(argv, 's');
+            if (opt.flag_o != 1) opt.flag_o = checker(argv, 'o');
         }
+        parametr = 1;
     }
-    return 0;
-}
-
-void _handle_header_flag_c(struct Option *opt, struct Option_2 *opt_2, char *file_name, int count_file) {
-    if (flags->c && !flags->h && count_file > 1)
-        printf("%s:", file_name);
-}
-
-void _reset_flag_e_and_f(struct Option *opt, struct Option_2 *opt_2) {
-    flags->e = 0;
-    flags->f = 0;
-}
-
-int _get_count_files(char *file_name[]) {
-    int count = 0;
-    while (*file_name++)
-        ++count;
-    return count;
-}
-
-int _check_flags_exist(char *argv) {
-    int error = 0;
-    for (int i = 1; argv[i]; i++)
-        if (strlen(argv) != strspn(argv, "-eivclnhsfo"))
-            error = 1;
-    return error;
+    return parametr;
 }
