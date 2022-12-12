@@ -1,14 +1,14 @@
 GG = gcc
 GF = -Wall -Wextra -Werror -std=c11 -D_GNU_SOURCE
 
-all: s21_cat
+all: cat
 
-s21_cat:
-	$(GG) $(GF) s21_cat.c ..comon/check.c -o s21_cat
+cat:
+	$(GG) $(GF) cat.c ..comon/check.c -o cat
 
 
 
 clean:
-	rm -f ./s21_cat
+	rm -f ./cat
 
 rebuild: clean all

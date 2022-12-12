@@ -1,5 +1,5 @@
-#ifndef SRC_GREP_S21_GREP_H_
-#define SRC_GREP_S21_GREP_H_
+#ifndef SRC_GREP_GREP_H_
+#define SRC_GREP_GREP_H_
 #include <regex.h>
 
 #include "../common/main.h"
@@ -12,4 +12,4 @@ int regular_expression(char *, char **, int *);
 int grep(Option_2 *opt, char *, char **, int);
 int comparison(const char *const, char **, char **, const Option_2 *opt);
 
-#endif  // SRC_GREP_S21_GREP_H_
+#endif // SRC_GREP_GREP_H_

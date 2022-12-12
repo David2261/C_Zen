@@ -6,27 +6,27 @@ COUNTER=0
 DIFF_RES=""
 
 declare -a tests=(
-"VAR test_case_cat.txt"
+"VAR test/test_case_cat.txt"
 )
 
 declare -a extra=(
-"-s test_1_cat.txt"
-"-b -e -n -s -t -v test_1_cat.txt"
-"-t test_3_cat.txt"
-"-n test_2_cat.txt"
+"-s test/test_1_cat.txt"
+"-b -e -n -s -t -v test/test_1_cat.txt"
+"-t test/test_3_cat.txt"
+"-n test/test_2_cat.txt"
 "no_file.txt"
-"-n -b test_1_cat.txt"
-"-s -n -e test_4_cat.txt"
-"test_1_cat.txt -n"
-"-n test_1_cat.txt"
-"-n test_1_cat.txt test_2_cat.txt"
-"-v test_5_cat.txt"
+"-n -b test/test_1_cat.txt"
+"-s -n -e test/test_4_cat.txt"
+"test/test_1_cat.txt -n"
+"-n test/test_1_cat.txt"
+"-n test/test_1_cat.txt test_2_cat.txt"
+"-v test/test_5_cat.txt"
 )
 
 testing()
 {
     t=$(echo $@ | sed "s/VAR/$var/")
-    ./s21_cat $t > test_s21_cat.log
+    ./cat $t > test_s21_cat.log
     cat $t > test_sys_cat.log
     DIFF_RES="$(diff -s test_s21_cat.log test_sys_cat.log)"
     (( COUNTER++ ))

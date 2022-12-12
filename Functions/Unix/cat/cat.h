@@ -1,7 +1,7 @@
 // !/bin/bash
-// Authored by Bulat <azorlaho>
-#ifndef SRC_CAT_S21_CAT_H_
-#define SRC_CAT_S21_CAT_H_
+// Authored by Bulat Nasyrov
+#ifndef SRC_CAT_CAT_H_
+#define SRC_CAT_CAT_H_
 #include "../common/main.h"
 #include <unistd.h>
 
@@ -13,4 +13,4 @@ int read_file(char **, Option *opt);
 
 int cat(Option *opt, FILE *file);
 
-#endif // SRC_CAT_S21_CAT_H_
+#endif // SRC_CAT_CAT_H_

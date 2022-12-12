@@ -48,7 +48,7 @@ declare -a extra=(
 testing()
 {
     t=$(echo $@ | sed "s/VAR/$var/")
-    valgrind --log-file="valgrind_s21_grep.log" --trace-children=yes --track-fds=yes --track-origins=yes --leak-check=full --show-leak-kinds=all ./s21_grep $t > test_s21_grep.log
+    valgrind --log-file="valgrind_s21_grep.log" --trace-children=yes --track-fds=yes --track-origins=yes --leak-check=full --show-leak-kinds=all ./grep $t > test_s21_grep.log
     leak=$(grep ERROR valgrind_s21_grep.log)
     (( COUNTER++ ))
     if [[ $leak == *"0 errors from 0 contexts"* ]]

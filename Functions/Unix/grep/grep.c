@@ -1,224 +1,332 @@
-#include <getopt.h>
-#include <regex.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "grep.h"
 
-#define GET getopt_long(argc, argv, "e:ivclnhsf:o", NULL, NULL)
-#define REG_EXT_NEW REG_EXTENDED | REG_NEWLINE
-#define NO_FLAGS_L_V_C !flag.l && !flag.v && !flag.c
+// grep [options] [regexp] [filename]
+#define BUFF 1024
 
-struct flags
+int _count_files(char *file_name[])
 {
-    int c, e, f, h, i, l, n, o, v, s, many_files, c_counter, l_counter,
-        n_counter;
-};
-
-struct grep_char
-{
-    size_t counter;
-    char name[500][500];
-};
-
-void error_no_file_printer(const char *file_name);
-void pattern_file_copy(const char *file_name);
-void file_hook(const char *file_name);
-void pattern_copy(const char *string);
-void s21_grep(int argc, char **argv);
-size_t flag_num_in_array(int c);
-void file_printer(FILE *file);
-void pattern_exe(char *str);
-void flag_finder(int c);
-void print_file_name();
-void error_printer();
-void printer_add();
-
-struct flags flag = {0};
-struct grep_char s21_pattern = {0};
-struct grep_char s21_file = {0};
-
-void s21_grep(int argc, char **argv)
-{
-    if (argc < 3)
-        error_printer();
-    for (int c = GET; c != -1; c = GET)
-        flag_finder(c);
-    if (!flag.e && !flag.f)
-        pattern_copy(argv[optind++]);
-    flag.many_files = argc - optind;
-    while (optind < argc)
-        file_hook(argv[optind++]);
+  int count = 0;
+  while (*file_name++)
+    ++count;
+  return count;
 }
 
-void flag_finder(int c)
+int main(int argc, char *argv[])
 {
-    if (c == '?')
-        error_printer();
-    *(&flag.c + flag_num_in_array(c)) = 1;
-    if (c == 'f')
-        pattern_file_copy(optarg);
-    if (c == 'e')
-        pattern_copy(optarg);
-}
+  Option_2 opt;
+  init_str(&opt);
 
-size_t flag_num_in_array(int c)
-{
-    size_t res = 0;
-    for (const char *str = "cefhilnovs"; str[res] != (char)c; res++)
+  int FLAG = 0;
+  int e_f = 0;
+  char *file[BUFF] = {NULL};
+  char *template[BUFF] = {NULL};
+
+  if (argc >= 3)
+  {
+    // Заполнение массивов
+    read_set(argc, argv, file, template, &opt);
+  }
+  else
+  {
+    FLAG = 1;
+  }
+  // Для проверки на наличие файла
+  if (!*file)
+    FLAG = 1;
+  // Работа с шаблоном
+  if (!FLAG)
+  {
+    if (*template == NULL)
     {
+      e_f = 1;
+      // int ch = strlen(*file);
+      // *template = malloc(sizeof(char*) * ch + 1);
+      *template = malloc(sizeof(char *) * (strlen(*file) + 1));
+      if (*template == NULL)
+      {
+        FLAG = 1;
+      }
+      else
+      {
+        strcpy(*template, *file);
+      }
     }
-    return res;
+
+    // Считывает количество файлов
+    int count_file = _count_files(file) - e_f;
+
+    for (int i = e_f; file[i] && FLAG == 0; i++)
+      FLAG = grep(&opt, file[i], template, count_file);
+    for (int i = 0; file[i]; i++)
+      free(file[i]);
+    for (int i = 0; template[i]; i++)
+      free(template[i]);
+  }
+  if (FLAG == 1)
+    printf("n/a");
+
+  return FLAG;
 }
 
-void pattern_copy(const char *string)
+int init_str(Option_2 *opt)
 {
-    strcpy(s21_pattern.name[s21_pattern.counter++], string);
+  opt->flag_e = 0;
+  opt->flag_i = 0;
+  opt->flag_v = 0;
+  opt->flag_c = 0;
+  opt->flag_l = 0;
+  opt->flag_n = 0;
+  opt->flag_h = 0;
+  opt->flag_s = 0;
+  opt->flag_f = 0;
+  opt->flag_o = 0;
+  return 0;
 }
 
-void pattern_file_copy(const char *file_name)
+int read_set(int argc, char **argv, char **file, char **template,
+             Option_2 *opt)
 {
-    FILE *file = fopen(file_name, "r");
-    if (file)
+  int FLAG = 0, y = 0, j = 0, check = 0;
+
+  // Проверка на валидность флагов
+  for (int i = 1; i < argc; i++)
+    if (strlen(*argv) == strspn(*argv, "-eivclnhsfo"))
+      FLAG = 1;
+
+  if (FLAG == 0)
+  {
+    for (int i = 1; i < argc; i++)
     {
-        for (char c = getc(file); !feof(file);
-             s21_pattern.counter++, c = getc(file))
+      // Ошибка, идет сброс флагов и запись флага i = 4
+      check = taker(argv[i], opt);
+      if (check)
+      {
+        // Если -f или -e нет в массиве
+        if ((opt->flag_e || opt->flag_f) && !argv[i])
         {
-            size_t pos = 0;
-            s21_pattern.name[s21_pattern.counter][pos] = c;
-            for (; c != '\n' && !feof(file);
-                 s21_pattern.name[s21_pattern.counter][pos++] = c, c = getc(file))
-            {
-            }
+          FLAG = 0;
+          break;
         }
-        fclose(file);
+        if (opt->flag_e)
+        {
+          i++;
+          template[j] = malloc(sizeof(char) * (strlen(argv[i]) + 1));
+          if (template[j] == NULL)
+          {
+            FLAG = 1;
+            break;
+          }
+          strcpy(template[j], argv[i]);
+          ++j;
+        }
+        else if (opt->flag_f)
+        {
+          i++;
+          // Для проверки флага -f
+          if ((FLAG = regular_expression(argv[i], template, &j)) != 0)
+            break;
+        }
+        // Сброс флагов
+        opt->flag_e = 0;
+        opt->flag_f = 0;
+      }
+      else
+      {
+        // int ch = strlen(argv[i]);
+        // file[y] = malloc(sizeof(char) * ch + 1);
+        file[y] = malloc(sizeof(char) * (strlen(argv[i]) + 1));
+        if (!file[y])
+        {
+          FLAG = 1;
+          break;
+        }
+        strcpy(file[y], argv[i]);
+        ++y;
+      }
+    }
+  }
+  template[j] = NULL;
+  file[y] = NULL;
+  // free(template[j]);
+  // free(file[y]);
+  return FLAG;
+}
+
+int taker(char *argv, Option_2 *opt)
+{
+  // Функция, которая проверяет флаги
+  int parametr = 0;
+  (void)opt;
+  if (argv[0] == '-')
+  {
+    for (int i = 1; argv[i]; i++)
+    {
+      if (strchr(argv, 'e'))
+        opt->flag_e = 1;
+      if (strchr(argv, 'i'))
+        opt->flag_i = 1;
+      if (strchr(argv, 'v'))
+        opt->flag_v = 1;
+      if (strchr(argv, 'c'))
+        opt->flag_c = 1;
+      if (strchr(argv, 'l'))
+        opt->flag_l = 1;
+      if (strchr(argv, 'n'))
+        opt->flag_n = 1;
+      if (strchr(argv, 'h'))
+        opt->flag_h = 1;
+      if (strchr(argv, 's'))
+        opt->flag_s = 1;
+      if (strchr(argv, 'f'))
+        opt->flag_f = 1;
+      if (strchr(argv, 'o'))
+        opt->flag_o = 1;
+    }
+    parametr = 1;
+  }
+  return parametr;
+}
+
+int regular_expression(char *path, char *templates[], int *index)
+{
+  int FLAG = 0;
+  FILE *file = fopen(path, "r");
+  if (!file)
+  {
+    FLAG = 1;
+  }
+  else
+  {
+    char *template = NULL;
+    size_t stream_size = 0;         // Количество символов
+    ssize_t stream_size_length = 0; // Размер строки
+    while (0 < (stream_size_length = getline(&template, &stream_size, file)))
+    {
+      templates[*index] = malloc(sizeof(char) * (stream_size_length + 1));
+      if (!templates[*index])
+      {
+        FLAG = 1;
+        break;
+      }
+      // Запись
+      strcpy(templates[*index], template);
+      templates[*index][strcspn(templates[*index], "\r\n")] = '\0';
+
+      // Если файл пустой с шаблоном
+      if (!strlen(templates[*index]))
+        templates[*index][0] = '.';
+      (*index)++;
+    }
+
+    fclose(file);
+    free(template);
+  }
+  return FLAG;
+}
+
+int grep(Option_2 *opt, char *path, char *template[], int count)
+{
+  FILE *file = fopen(path, "r");
+  int FLAG = 0;
+
+  if (file != NULL)
+  {
+    int matched_lines = 0, count_line = 0;
+    char *str = NULL;
+    char *matches[BUFF] = {NULL};
+    size_t stream_size = 0;
+
+    // str = (char *)malloc(sizeof(char *) * BUFF);
+    while (0 < getline(&str, &stream_size, file))
+    {
+      count_line++;
+      // Игнор регистра
+      if (comparison(str, template, matches, opt))
+      {
+        matched_lines++;
+        if (!opt->flag_c && !opt->flag_l)
+        {
+          if (!opt->flag_c && !opt->flag_h && count > 1)
+            printf("%s:", path);
+          if (opt->flag_n)
+            printf("%d:", count_line);
+          if (opt->flag_o && !opt->flag_v)
+          {
+            for (int j = 0; matches[j]; j++)
+              printf("%s\n", matches[j]);
+          }
+          else
+          {
+            if (str[strlen(str) - 1] == '\n')
+            {
+              printf("%s", str);
+            }
+            else
+            {
+              printf("%s\n", str);
+            }
+          }
+        }
+      }
+
+      for (int j = 0; matches[j]; j++)
+        free(matches[j]);
+    }
+    // Для флагов -c
+    if (opt->flag_c && !opt->flag_h && 1 < count)
+      printf("%s:", path);
+
+    if (opt->flag_c)
+      printf("%d\n", opt->flag_l ? matched_lines > 0 : matched_lines);
+    if (opt->flag_l && matched_lines)
+      printf("%s\n", path);
+    free(str);
+    fclose(file);
+  }
+  else if (!opt->flag_s)
+  {
+    FLAG = 1;
+  }
+  return FLAG;
+}
+
+int comparison(const char *const str, char **template, char **matches,
+               const Option_2 *opt)
+{
+  // Сравнение с шаблоном
+  int index = 0;
+  for (int i = 0; template[i]; i++)
+  {
+    regex_t regex;
+    if (opt->flag_i)
+    {
+      // Игнор регистра
+      regcomp(&regex, template[i], REG_ICASE);
     }
     else
     {
-        error_no_file_printer(file_name);
-        exit(0);
+      regcomp(&regex, template[i], REG_EXTENDED);
     }
-}
+    regmatch_t match;
+    size_t str_length = strlen(str);
+    size_t reg_offset = 0;
 
-void file_hook(const char *file_name)
-{
-    FILE *file = fopen(file_name, "r");
-    if (file)
+    for (int reg = 0;
+         (reg = regexec(&regex, str + reg_offset, 1, &match, 0)) == 0;
+         index++)
     {
-        strcpy(s21_file.name[s21_file.counter++], file_name);
-        file_printer(file);
-        fclose(file);
+      size_t length = match.rm_eo - match.rm_so;
+
+      // matches[index] = (char*)malloc(sizeof(char*) * (length + 1));
+      matches[index] = (char *)malloc(sizeof(char) * length + 1);
+      memcpy(matches[index], str + match.rm_so + reg_offset, length);
+      matches[index][length] = '\0';
+      reg_offset += match.rm_eo;
+      if (reg_offset > str_length)
+        break;
     }
-    else if (!flag.s)
-    {
-        error_no_file_printer(file_name);
-    }
-}
-
-void file_printer(FILE *file)
-{
-    char str[500] = "";
-    flag.c_counter = flag.l_counter = flag.n_counter = 0;
-    for (char c = getc(file); !feof(file); c = getc(file))
-    {
-        flag.n_counter++;
-        size_t pos = 0;
-        str[pos] = c;
-        for (; c != '\n' && !feof(file);
-             str[pos++] = c, c = getc(file))
-        {
-        }
-        str[pos] = '\0';
-        pattern_exe(str);
-        if (flag.l_counter == 1)
-            break;
-    }
-    printer_add();
-}
-
-void pattern_exe(char *str)
-{
-    size_t res = 0, first_file = 0, first_num = 0;
-    regmatch_t pmatch[1] = {0};
-    regex_t preg = {0};
-
-    for (size_t current = 0; current < s21_pattern.counter; current++)
-    {
-        if (regcomp(&preg, s21_pattern.name[current],
-                    flag.i ? REG_EXT_NEW | REG_ICASE : REG_EXT_NEW))
-            continue;
-        if (flag.o && NO_FLAGS_L_V_C)
-        {
-            while (!regexec(&preg, str, 1, pmatch, 0))
-            {
-                if (first_file++ == 0)
-                    print_file_name();
-                if (flag.n && first_num++ == 0)
-                    printf("%d:", flag.n_counter);
-                printf("%.*s\n", (int)(pmatch[0].rm_eo - pmatch[0].rm_so), str + pmatch[0].rm_so);
-                str += pmatch[0].rm_eo;
-            }
-        }
-        else if (regexec(&preg, str, 0, pmatch, 0) == flag.v)
-        {
-            res++;
-        }
-        regfree(&preg);
-    }
-
-    if (res == s21_pattern.counter || (res && !flag.v))
-    {
-        if (flag.c)
-            flag.c_counter++;
-        if (flag.l)
-            flag.l_counter = 1;
-        if (!flag.c && !flag.l)
-        {
-            print_file_name();
-            if (flag.n)
-                printf("%d:", flag.n_counter);
-            printf("%s\n", str);
-        }
-    }
-}
-
-void printer_add()
-{
-    if (flag.o && NO_FLAGS_L_V_C)
-        return;
-    if (flag.c)
-    {
-        print_file_name();
-        printf("%d\n", flag.c_counter);
-    }
-    if (flag.l && flag.l_counter)
-        printf("%s\n", s21_file.name[s21_file.counter - 1]);
-}
-
-void print_file_name()
-{
-    if (flag.many_files > 1 && !flag.h)
-        printf("%s:", s21_file.name[s21_file.counter - 1]);
-}
-
-void error_printer()
-{
-    system("clear");
-    if (!flag.s)
-        printf(
-            ">\t Usually people know what they're doing, apparently this is not about you."
-            "\n./s21_grep [-options] [\"pattern\"] [\"file.name\"]");
-    exit(0);
-}
-
-void error_no_file_printer(const char *file_name)
-{
-    system("clear");
-    printf("file: %s does not exist, and neither does the meaning of your life",
-           file_name);
-}
-
-int main(int argc, char **argv)
-{
-    s21_grep(argc, argv);
-    return 0;
+    matches[index] = NULL;
+    regfree(&regex);
+  }
+  return opt->flag_v ? !index : index;
 }
