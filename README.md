@@ -24,8 +24,8 @@ bubble sort, character matching, palidrom, reverse, etc.*
 2. *In the **Lessons** directory, written in inside this repository in a file [Readme](./Lessons/README.md)*
 3. *In the **Math** directory, simple programs are written thet perform operations such as:
 averange size, exponentiation, recursion, etc.*
-4. *In the **SMP** directory, various functions from Kernighan Ritchie's book have been written.*
-
+4. *In the **UsefulExp** directory, various functions from Kernighan Ritchie's book have been written.*
+5. *In the **SMP** directory, I wrote simple C function patterens.*
 
 ## Example
 
